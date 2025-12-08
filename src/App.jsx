@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { initMIDI, findGp200Output, sendCC, CC, requestPatchName, queryPatchVolume, queryModuleState, MODULE_IDS } from './midi.js';
 import {
   Container, DisplayArea, AppTitle, StatusBadge, PatchDisplay, ControlRow, SmallButton,
@@ -76,6 +76,9 @@ export default function App() {
                   const patchNum = data[26];
                   setCurrentPatch(patchNum);
                   setPatchName('---');
+                  setQa1(null);
+                  setQa2(null);
+                  setQa3(null);
                   setTimeout(() => {
                     requestPatchName(outDev, patchNum);
                     setTimeout(() => queryPatchVolume(outDev), 100);
@@ -178,7 +181,6 @@ export default function App() {
         <ControlRow>
           <SmallButton variant="bank" onClick={() => handlePatchChange('bank-')}>BANK-</SmallButton>
           <SmallButton variant="bank" onClick={() => handlePatchChange('bank+')}>BANK+</SmallButton>
-          <SmallButton variant="ctrl" onClick={() => sendCC(output, CC.CTRL1, 127)}>CTRL 1</SmallButton>
         </ControlRow>
         <ControlRow>
           <SmallButton variant="slot" onClick={() => handlePatchChange('patch-')}>PREV</SmallButton>
@@ -191,37 +193,37 @@ export default function App() {
         <KnobsRow>
           <Knob>
             <KnobLabel>Patch Vol</KnobLabel>
-            <KnobValue>{patchVol ?? '?'}</KnobValue>
+            <KnobValue>{patchVol ?? ''}</KnobValue>
             <StyledSlider value={patchVol ?? 50} onChange={(_, v) => { setPatchVol(v); sendCC(output, CC.PATCH_VOL, v); }}
                           min={0} max={100} />
           </Knob>
           <Knob>
             <KnobLabel>EXP 1</KnobLabel>
-            <KnobValue>{exp1 ?? '?'}</KnobValue>
+            <KnobValue>{exp1 ?? ''}</KnobValue>
             <StyledSlider value={exp1 ?? 50} onChange={(_, v) => { setExp1(v); sendCC(output, CC.EXP1, v); }}
                           min={0} max={100} />
           </Knob>
           <Knob>
-            <KnobLabel>QA 1</KnobLabel>
-            <KnobValue>{qa1 ?? '?'}</KnobValue>
+            <KnobLabel>Quick Access 1</KnobLabel>
+            <KnobValue>{qa1 ?? ''}</KnobValue>
             <StyledSlider value={qa1 ?? 50} onChange={(_, v) => { setQa1(v); sendCC(output, CC.QA1, v); }}
                           min={0} max={100} />
           </Knob>
           <Knob>
-            <KnobLabel>QA 2</KnobLabel>
-            <KnobValue>{qa2 ?? '?'}</KnobValue>
+            <KnobLabel>Quick Access 2</KnobLabel>
+            <KnobValue>{qa2 ?? ''}</KnobValue>
             <StyledSlider value={qa2 ?? 50} onChange={(_, v) => { setQa2(v); sendCC(output, CC.QA2, v); }}
                           min={0} max={100} />
           </Knob>
           <Knob>
-            <KnobLabel>QA 3</KnobLabel>
-            <KnobValue>{qa3 ?? '?'}</KnobValue>
+            <KnobLabel>Quick Access 3</KnobLabel>
+            <KnobValue>{qa3 ?? ''}</KnobValue>
             <StyledSlider value={qa3 ?? 50} onChange={(_, v) => { setQa3(v); sendCC(output, CC.QA3, v); }}
                           min={0} max={100} />
           </Knob>
         </KnobsRow>
         <ToggleRow>
-          <ToggleLabel>EXP1 Mode: {expMode === null ? '?' : expMode ? 'B' : 'A'}</ToggleLabel>
+          <ToggleLabel>EXP1 Mode: {expMode === null ? '' : expMode ? 'B' : 'A'}</ToggleLabel>
           <StyledSwitch state={expMode} checked={expMode === true}
                         onChange={() => toggleState(expMode, setExpMode, CC.EXP1_AB)} />
         </ToggleRow>
@@ -240,48 +242,55 @@ export default function App() {
           <ModuleButton active={modules.MOD} onClick={() => toggleModule('MOD', CC.MOD_MOD)}>MOD</ModuleButton>
           <ModuleButton active={modules.DLY} onClick={() => toggleModule('DLY', CC.MOD_DLY)}>DLY</ModuleButton>
           <ModuleButton active={modules.RVB} onClick={() => toggleModule('RVB', CC.MOD_RVB)}>RVB</ModuleButton>
-          <ModuleButton active={modules.TUNER} onClick={() => toggleModule('TUNER', CC.TUNER)}>TUNER</ModuleButton>
-          <ModuleButton active={modules.LOOPER} onClick={() => toggleModule('LOOPER', CC.LOOPER)}>LOOPER</ModuleButton>
         </ModulesGrid>
       </Section>
 
       <Section>
-        <SectionTitle>Looper</SectionTitle>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, pb: 1, borderBottom: '1px solid #333' }}>
+          <SectionTitle sx={{ mb: 0, pb: 0, borderBottom: 'none' }}>Looper</SectionTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ToggleLabel>{modules.LOOPER === null ? '' : modules.LOOPER ? 'ON' : 'OFF'}</ToggleLabel>
+            <StyledSwitch state={modules.LOOPER} checked={modules.LOOPER === true}
+                          onChange={() => toggleModule('LOOPER', CC.LOOPER)} />
+          </Box>
+        </Box>
         <CompactGrid>
           <ActionButton onClick={() => sendCC(output, CC.LOOPER_RECORD, 127)}>Record</ActionButton>
           <ActionButton onClick={() => sendCC(output, CC.LOOPER_AUTO_REC, 127)}>Auto Rec</ActionButton>
           <ActionButton onClick={() => sendCC(output, CC.DELETE_LOOP, 127)}>Delete</ActionButton>
         </CompactGrid>
-        <ToggleRow style={{marginTop: '15px'}}>
-          <ToggleLabel>Play: {looperPlaying === null ? '?' : looperPlaying ? 'ON' : 'OFF'}</ToggleLabel>
-          <StyledSwitch state={looperPlaying} checked={looperPlaying === true}
-                        onChange={() => toggleState(looperPlaying, setLooperPlaying, CC.LOOPER_PLAY)} />
-        </ToggleRow>
-        <ToggleRow>
-          <ToggleLabel>Tempo: {looperTempo === null ? '?' : looperTempo ? 'Normal' : 'Half'}</ToggleLabel>
-          <StyledSwitch state={looperTempo} checked={looperTempo === true}
-                        onChange={() => toggleState(looperTempo, setLooperTempo, CC.LOOPER_TEMPO)} />
-        </ToggleRow>
-        <ToggleRow>
-          <ToggleLabel>Playback: {looperPlayback === null ? '?' : looperPlayback ? 'Normal' : 'Reverse'}</ToggleLabel>
-          <StyledSwitch state={looperPlayback} checked={looperPlayback === true}
-                        onChange={() => toggleState(looperPlayback, setLooperPlayback, CC.LOOPER_PLAYBACK)} />
-        </ToggleRow>
-        <ToggleRow>
-          <ToggleLabel>Position: {looperPlacement === null ? '?' : looperPlacement ? 'Pre' : 'Post'}</ToggleLabel>
-          <StyledSwitch state={looperPlacement} checked={looperPlacement === true}
-                        onChange={() => toggleState(looperPlacement, setLooperPlacement, CC.LOOPER_PLACEMENT)} />
-        </ToggleRow>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginTop: '15px', marginBottom: '15px' }}>
+          <ToggleRow style={{ margin: 0 }}>
+            <ToggleLabel>Play: {looperPlaying === null ? '' : looperPlaying ? 'ON' : 'OFF'}</ToggleLabel>
+            <StyledSwitch state={looperPlaying} checked={looperPlaying === true}
+                          onChange={() => toggleState(looperPlaying, setLooperPlaying, CC.LOOPER_PLAY)} />
+          </ToggleRow>
+          <ToggleRow style={{ margin: 0 }}>
+            <ToggleLabel>Tempo: {looperTempo === null ? '' : looperTempo ? 'Normal' : 'Half'}</ToggleLabel>
+            <StyledSwitch state={looperTempo} checked={looperTempo === true}
+                          onChange={() => toggleState(looperTempo, setLooperTempo, CC.LOOPER_TEMPO)} />
+          </ToggleRow>
+          <ToggleRow style={{ margin: 0 }}>
+            <ToggleLabel>Playback: {looperPlayback === null ? '' : looperPlayback ? 'Normal' : 'Reverse'}</ToggleLabel>
+            <StyledSwitch state={looperPlayback} checked={looperPlayback === true}
+                          onChange={() => toggleState(looperPlayback, setLooperPlayback, CC.LOOPER_PLAYBACK)} />
+          </ToggleRow>
+          <ToggleRow style={{ margin: 0 }}>
+            <ToggleLabel>Position: {looperPlacement === null ? '' : looperPlacement ? 'Pre' : 'Post'}</ToggleLabel>
+            <StyledSwitch state={looperPlacement} checked={looperPlacement === true}
+                          onChange={() => toggleState(looperPlacement, setLooperPlacement, CC.LOOPER_PLACEMENT)} />
+          </ToggleRow>
+        </Box>
         <KnobsRow>
           <Knob>
             <KnobLabel>Rec Vol</KnobLabel>
-            <KnobValue>{looperRecVol ?? '?'}</KnobValue>
+            <KnobValue>{looperRecVol ?? ''}</KnobValue>
             <StyledSlider value={looperRecVol ?? 50} onChange={(_, v) => { setLooperRecVol(v); sendCC(output, CC.LOOPER_REC_VOL, v); }}
                           min={0} max={100} />
           </Knob>
           <Knob>
             <KnobLabel>Play Vol</KnobLabel>
-            <KnobValue>{looperPlayVol ?? '?'}</KnobValue>
+            <KnobValue>{looperPlayVol ?? ''}</KnobValue>
             <StyledSlider value={looperPlayVol ?? 50} onChange={(_, v) => { setLooperPlayVol(v); sendCC(output, CC.LOOPER_PLAY_VOL, v); }}
                           min={0} max={100} />
           </Knob>
@@ -289,22 +298,24 @@ export default function App() {
       </Section>
 
       <Section>
-        <SectionTitle>Drum Machine</SectionTitle>
-        <ToggleRow>
-          <ToggleLabel>Play: {drumPlaying === null ? '?' : drumPlaying ? 'ON' : 'OFF'}</ToggleLabel>
-          <StyledSwitch state={drumPlaying} checked={drumPlaying === true}
-                        onChange={() => toggleState(drumPlaying, setDrumPlaying, CC.DRUM_PLAY)} />
-        </ToggleRow>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, pb: 1, borderBottom: '1px solid #333' }}>
+          <SectionTitle sx={{ mb: 0, pb: 0, borderBottom: 'none' }}>Drum Machine</SectionTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ToggleLabel>{drumPlaying === null ? '' : drumPlaying ? 'ON' : 'OFF'}</ToggleLabel>
+            <StyledSwitch state={drumPlaying} checked={drumPlaying === true}
+                          onChange={() => toggleState(drumPlaying, setDrumPlaying, CC.DRUM_PLAY)} />
+          </Box>
+        </Box>
         <KnobsRow>
           <Knob>
             <KnobLabel>Type</KnobLabel>
-            <KnobValue>{drumType ?? '?'}</KnobValue>
+            <KnobValue>{drumType ?? ''}</KnobValue>
             <StyledSlider value={drumType ?? 50} onChange={(_, v) => { setDrumType(v); sendCC(output, CC.DRUM_TYPE, v); }}
                           min={0} max={99} />
           </Knob>
           <Knob>
             <KnobLabel>Volume</KnobLabel>
-            <KnobValue>{drumVol ?? '?'}</KnobValue>
+            <KnobValue>{drumVol ?? ''}</KnobValue>
             <StyledSlider value={drumVol ?? 50} onChange={(_, v) => { setDrumVol(v); sendCC(output, CC.DRUM_VOL, v); }}
                           min={0} max={100} />
           </Knob>
@@ -312,6 +323,17 @@ export default function App() {
             <SmallButton variant="tap" onClick={() => sendCC(output, CC.TAP_TEMPO, 127)}>TAP</SmallButton>
           </Box>
         </KnobsRow>
+      </Section>
+
+      <Section>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #333' }}>
+          <SectionTitle sx={{ mb: 0, pb: 0, borderBottom: 'none' }}>Tuner</SectionTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ToggleLabel>{modules.TUNER === null ? '' : modules.TUNER ? 'ON' : 'OFF'}</ToggleLabel>
+            <StyledSwitch state={modules.TUNER} checked={modules.TUNER === true}
+                          onChange={() => toggleModule('TUNER', CC.TUNER)} />
+          </Box>
+        </Box>
       </Section>
 
       {false && (
@@ -370,6 +392,27 @@ export default function App() {
           </Typography>
         </Section>
       )}
+      <Section>
+        <Typography sx={{ fontSize: '13px', color: '#aaa', lineHeight: 1.6, mb: 2, textAlign: 'center' }}>
+          The webGP-200 is a light web app used to control GP-200 from a computer or a phone (unaffiliated with Valeton).
+          Connect to your GP-200 with a USB cable and the app should detect it automatically.
+        </Typography>
+        <Typography sx={{ fontSize: '13px', color: '#aaa', lineHeight: 1.6, mb: 3, textAlign: 'center' }}>
+          Can't connect? Check your browser's MIDI permissions usually found near the address bar. Firefox browser is recommended.
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <a href="https://ko-fi.com/H2H61OZKYX" target="_blank" rel="noopener noreferrer">
+            <img
+              src="https://storage.ko-fi.com/cdn/kofi6.png?v=6"
+              alt="Buy Me a Coffee at ko-fi.com"
+              style={{ border: 0, height: '36px' }}
+            />
+          </a>
+          <Typography sx={{ fontSize: '13px', color: '#aaa', textAlign: 'center' }}>
+            Enjoying webGP-200? Your support helps keep this project alive and improving. Thank you!
+          </Typography>
+        </Box>
+      </Section>
     </Container>
   );
 }
